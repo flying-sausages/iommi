@@ -70,6 +70,10 @@ bootstrap_base = Style(
         },
         non_editable_input__attrs__class={'form-control': False},
     ),
+    FormsetField=dict(
+        nested_form__attrs__class={'form-row': True},
+        nested_form__tag='div',
+    ),
     Action=dict(
         shortcuts=dict(
             # In bootstrap one must choose a button style (secondary, success, ...)
@@ -191,4 +195,11 @@ bootstrap_horizontal = Style(
     Form__attrs__class={
         'align-items-center': True,
     },
+)
+bootstrap_fieldset = Style(
+    bootstrap_horizontal,
+    Field=dict(
+        input__attrs__placeholder=lambda field, **_: field.display_name,
+        label__include=False,
+    ),
 )
