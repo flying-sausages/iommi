@@ -41,12 +41,13 @@ from iommi.part import (
     Part,
     PartType,
 )
-from iommi.reinvokable import reinvokable
-from iommi.traversable import (
-    EvaluatedRefinable,
-)
 
 # https://html.spec.whatwg.org/multipage/syntax.html#void-elements
+from iommi.refinable import (
+    EvaluatedRefinable,
+    RefinableMembers,
+)
+
 _void_elements = [
     'area',
     'base',
@@ -153,23 +154,24 @@ class Fragment(Part, Tag):
     attrs: Attrs = Refinable()  # attrs is evaluated, but in a special way so gets no EvaluatedRefinable type
     tag = EvaluatedRefinable()
     template: Union[str, Template] = EvaluatedRefinable()
+    children = RefinableMembers()
 
-    @reinvokable
     @dispatch(
         tag=None,
         children=EMPTY,
         attrs__class=EMPTY,
         attrs__style=EMPTY,
     )
-    def __init__(self, text=None, *, children: Optional[Dict[str, PartType]] = None, **kwargs):
-        super(Fragment, self).__init__(**kwargs)
+    def __init__(self, text=None, **kwargs):
         if text is not None:
-            setdefaults_path(
-                children,
-                text=text,
-            )
-        self._iommi_saved_params['text'] = text
-        collect_members(self, name='children', items=children, cls=Fragment, unknown_types_fall_through=True)
+            kwargs['children'].text = text
+        super().__init__(**kwargs)
+
+    def on_refine_done(self):
+        super().on_refine_done()
+        collect_members(
+            self, name='children', items=self.namespace.children, cls=Fragment, unknown_types_fall_through=True
+        )
 
     def render_text_or_children(self, context):
         request = self.get_request()
@@ -178,10 +180,11 @@ class Fragment(Part, Tag):
             *[as_html(part=x, context=context, request=request) for x in values(self.children)],
         )
 
-    def __repr__(self):
-        return f'<{self.__class__.__name__} tag:{self.tag} attrs:{dict(self.attrs) if self.attrs else None!r}>'
+    # def __repr__(self):
+    #     return f'<{self.__class__.__name__} tag:{self.tag} attrs:{dict(self.attrs) if self.attrs else None!r}>'
 
     def on_bind(self) -> None:
+        super().on_bind()
         bind_members(self, name='children', unknown_types_fall_through=True)
 
         # Fragment children are special and they can be raw str/int etc but

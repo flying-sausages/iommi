@@ -7,10 +7,9 @@ from typing import (
 )
 
 from tri_declarative import (
-    dispatch,
+    Namespace,
     Refinable,
     refinable,
-    RefinableObject,
 )
 from tri_struct import Struct
 
@@ -24,18 +23,15 @@ from iommi.evaluate import (
     evaluate_strict,
     evaluate_strict_container,
 )
+from iommi.refinable import (
+    is_evaluated_refinable,
+    RefinableMembers,
+    RefinableObject,
+)
 from iommi.style import (
     apply_style,
     get_iommi_style_name,
 )
-
-
-class EvaluatedRefinable(Refinable):
-    pass
-
-
-def is_evaluated_refinable(x):
-    return isinstance(x, EvaluatedRefinable) or getattr(x, '__iommi__evaluated', False)
 
 
 class PathNotFoundException(Exception):
@@ -56,18 +52,17 @@ class Traversable(RefinableObject):
     context = None
 
     iommi_style: str = Refinable()
+    assets = RefinableMembers()
+    endpoints = RefinableMembers()
 
-    _declared_members: Dict[str, 'Traversable']
     _bound_members: Dict[str, 'Traversable']
 
-    @dispatch
     def __init__(self, _name=None, **kwargs):
-        self._declared_members = Struct()
         self._bound_members = None
         self._evaluate_parameters = None
         self._name = _name
 
-        super(Traversable, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def __repr__(self):
         n = f'{self._name}' if self._name is not None else ''
@@ -116,25 +111,37 @@ class Traversable(RefinableObject):
         assert self._is_bound, NOT_BOUND_MESSAGE
         return build_long_path(self).replace('/', '__')
 
+    def apply_styles(self, is_root=True):
+        iommi_style = get_iommi_style_name(self)
+        result = apply_style(iommi_style, self, is_root=is_root)
+
+        for k, v in items(self.get_declared('refinable_members')):
+            if isinstance(v, Traversable):
+                setattr(result, k, v.apply_styles(is_root=False))
+
+        return result
+
     def bind(self, *, parent=None, request=None):
         assert parent is None or parent._is_bound
         assert not self._is_bound
 
         result = copy.copy(self)
 
-        if parent:
-            is_root = False
-            iommi_style = get_iommi_style_name(parent)
+        is_root = parent is None
+
+        if is_root:
+            result = result.apply_styles()
         else:
-            is_root = True
-            iommi_style = get_iommi_style_name(self)
+            # Styling done by collect_members
+            pass
 
-        result = apply_style(iommi_style, result, is_root)
+        if not result.is_refine_done:
+            result = result.refine_done()
+
         result._declared = self
-
         del self  # to prevent mistakes when changing the code below
 
-        if parent is None:
+        if is_root:
             result._request = request
             if result._name is None:
                 result._name = 'root'
@@ -202,17 +209,12 @@ class Traversable(RefinableObject):
 
 
 def declared_members(node: Traversable) -> Any:
-    # noinspection PyProtectedMember
-    return node._declared_members
-
-
-def set_declared_member(node: Traversable, name: str, value: Union[Any, Dict[str, Traversable]]):
-    root = node.iommi_root()
-    if hasattr(root, '_long_path_by_path') or hasattr(root, '_path_by_long_path'):
-        print("### A disturbance in the force... The namespace has been recalculated!")
-        root._long_path_by_path = root._path_by_long_path = None
-    # noinspection PyProtectedMember
-    node._declared_members[name] = value
+    assert node.is_refine_done, "Trying to find declared_member on RefinableObject without doing refine_done() first"
+    result = Namespace()
+    for k, v in items(node.get_declared('refinable_members')):
+        if isinstance(v, RefinableMembers):
+            result[k] = node.namespace.get(k, Namespace())
+    return result
 
 
 def get_long_path_by_path(node):
@@ -273,7 +275,7 @@ def build_long_path_by_path(root) -> Dict[str, str]:
                 )
                 result[less_short_path] = long_path
 
-        if hasattr(node, '_declared_members'):
+        if isinstance(node, RefinableObject):
             members = declared_members(node)
         elif isinstance(node, dict):
             members = node

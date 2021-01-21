@@ -48,7 +48,6 @@ from iommi.base import (
     items,
     values,
 )
-from iommi.reinvokable import reinvokable
 
 app_verbose_name_by_label = {
     config.label: config.verbose_name.replace('_', ' ')
@@ -164,7 +163,6 @@ class Admin(Page):
     )
 
     @read_config
-    @reinvokable
     @dispatch(
         apps=EMPTY,
         parts=EMPTY,
