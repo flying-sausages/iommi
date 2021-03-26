@@ -1693,7 +1693,7 @@ class Table(Part, Tag):
             add_hidden_all_pks_field(declared_bulk_fields)
 
             # x.bulk.include can be a callable here. We treat that as truthy on purpose.
-            if any(x.bulk.include for x in values(declared_members(self).columns)) or 'actions' in self.bulk:
+            if any(x.bulk.include for x in values(declared_members(self).columns)) or 'actions' in self.namespace.bulk:
                 self.bulk = form_class(
                     _fields_dict=declared_bulk_fields,
                     _name='bulk',

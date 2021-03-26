@@ -15,11 +15,10 @@ from tri_declarative import (
 from tri_struct import Struct
 
 from iommi.base import (
-    keys,
     items,
-    values,
+    keys,
 )
-from iommi.refinable import RefinableObject
+from iommi.sort_after import sort_after
 from iommi.traversable import (
     declared_members,
     Traversable,
@@ -112,12 +111,13 @@ def collect_members(
 
     for key, item in items_of(unbound_items):
         if isinstance(item, Traversable):
-            unbound_items[key] = item.apply_styles(is_root=False).refine_done()
+            unbound_items[key] = item.apply_styles(container.namespace.get('iommi_style'), is_root=False).refine_done()
 
     # for k, v in items_of(unbound_items):
     #     if isinstance(v, RefinableObject):
     #         print(f"\n{k}: {v.namespace}\n")
 
+    unbound_items = sort_after(unbound_items)
     container.namespace[name] = unbound_items
     setattr(container, name, NotBoundYet(container, name))
 
@@ -150,7 +150,7 @@ def bind_members(parent: Traversable, *, name: str, cls=Members, unknown_types_f
         unknown_types_fall_through=unknown_types_fall_through,
     )
     assert parent._is_bound
-    m = m.refine_done().bind(parent=parent)
+    m = m.apply_styles(parent.namespace.get('iommi_style'), is_root=False).refine_done().bind(parent=parent)
     setattr(parent._bound_members, name, m)
     setattr(parent, name, m._bound_members)
     if not lazy:

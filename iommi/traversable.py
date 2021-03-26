@@ -6,6 +6,7 @@ from typing import (
     Union,
 )
 
+from django.conf import settings
 from tri_declarative import (
     Namespace,
     Refinable,
@@ -30,6 +31,7 @@ from iommi.refinable import (
 )
 from iommi.style import (
     apply_style,
+    DEFAULT_STYLE,
     get_iommi_style_name,
 )
 
@@ -111,13 +113,18 @@ class Traversable(RefinableObject):
         assert self._is_bound, NOT_BOUND_MESSAGE
         return build_long_path(self).replace('/', '__')
 
-    def apply_styles(self, is_root=True):
-        iommi_style = get_iommi_style_name(self)
-        result = apply_style(iommi_style, self, is_root=is_root)
+    def apply_styles(self, iommi_style_name, is_root=True):
+        if iommi_style_name is None:
+            iommi_style_name = self.namespace.get('iommi_style')
+
+        if iommi_style_name is None:
+            iommi_style_name = getattr(settings, 'IOMMI_DEFAULT_STYLE', DEFAULT_STYLE)
+
+        result = apply_style(iommi_style_name, self, is_root=is_root)
 
         for k, v in items(self.get_declared('refinable_members')):
             if isinstance(v, Traversable):
-                setattr(result, k, v.apply_styles(is_root=False))
+                setattr(result, k, v.apply_styles(iommi_style_name, is_root=False))
 
         return result
 
@@ -130,7 +137,7 @@ class Traversable(RefinableObject):
         is_root = parent is None
 
         if is_root:
-            result = result.apply_styles()
+            result = result.apply_styles(None, is_root=True)
         else:
             # Styling done by collect_members
             pass

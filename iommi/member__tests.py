@@ -77,6 +77,15 @@ def test_collect_from_declarative():
     assert declared_members(basket).fruits.orange.taste == 'sour'
 
 
+def test_collect_from_both():
+    class MyBasket(Basket):
+        orange = Fruit(taste='sour')
+
+    basket = MyBasket(fruits__banana__taste="sweet").refine_done()
+    assert declared_members(basket).fruits.banana.taste == 'sweet'
+    assert declared_members(basket).fruits.orange.taste == 'sour'
+
+
 def test_collect_unapplied_config():
     class MyBasket(Basket):
         pear = Fruit()
@@ -171,9 +180,7 @@ def test_inclusion():
     class IncludableFruit(Fruit):
         include = Refinable()
 
-        @dispatch(
-            include=True
-        )
+        @dispatch(include=True)
         def __init__(self, **kwargs):
             super(IncludableFruit, self).__init__(**kwargs)
 

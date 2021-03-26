@@ -32,7 +32,10 @@ from iommi.member import (
 from iommi.page import (
     Page,
 )
-from iommi.refinable import EvaluatedRefinable
+from iommi.refinable import (
+    EvaluatedRefinable,
+    RefinableMembers,
+)
 from iommi.style import unregister_style
 from iommi.traversable import (
     build_long_path_by_path,
@@ -64,7 +67,7 @@ def test_traverse():
     root = StubTraversable(
         _name='root',
         members=Struct(foo=foo),
-    )
+    ).refine_done()
 
     expected = {
         '': '',
@@ -101,7 +104,7 @@ def test_traverse_on_iommi():
             ),
         )
 
-    page = MyPage()
+    page = MyPage().refine_done()
 
     actual = build_long_path_by_path(page)
     assert len(actual.keys()) == len(set(actual.keys()))
@@ -138,7 +141,7 @@ def test_evil_names():
         get_request = Fragment()
 
     with pytest.raises(Exception) as e:
-        ErrorMessages()
+        ErrorMessages().refine_done()
 
     assert (
         str(e.value)
@@ -315,14 +318,19 @@ def test_apply_style_not_affecting_definition_2():
     unregister_style('bar_style')
 
 
-def test_get_config():
+@pytest.fixture
+def fruit_style():
     register_style(
         'fruit_style',
         Style(
             Fruit__attrs__class__style=True,
         ),
     )
+    yield
+    unregister_style('fruit_style')
 
+
+def test_get_config(fruit_style):
     class Fruit(Traversable):
         attrs = Refinable()
 
@@ -357,7 +365,7 @@ def test_get_config():
     @declarative(Fruit, '_fruits_dict')
     @with_meta
     class Basket(Traversable):
-        fruits = Refinable()
+        fruits = RefinableMembers()
 
         class Meta:
             fruits__banana__attrs__class__basket = True
@@ -395,5 +403,3 @@ def test_get_config():
         'sub_some_fruit',
         'my_basket_fruit_invoke',
     ]
-
-    unregister_style('fruit_style')

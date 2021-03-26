@@ -37,10 +37,10 @@ def get_iommi_style_name(obj: Any) -> str:
 
 def apply_style(style_name: str, obj: Any, is_root) -> Any:
     style_data = get_style_data_for_object(style_name=style_name, obj=obj, is_root=is_root)
-    return apply_style_data(style_data, obj)
+    return apply_style_data(style_data, obj, style_name)
 
 
-def apply_style_data(style_data: Namespace, obj: Any) -> Any:
+def apply_style_data(style_data: Namespace, obj: Any, style_name: str = None) -> Any:
     if not style_data:
         return obj
     if not isinstance(obj, RefinableObject):
@@ -49,6 +49,8 @@ def apply_style_data(style_data: Namespace, obj: Any) -> Any:
     if obj.is_refine_done:
         print(f'Missing out of {style_data} for {type(obj)}, because already finalized')
         return obj
+    if style_name:
+        style_data['iommi_style'] = style_name
     return obj.refine_defaults(**style_data)
 
 

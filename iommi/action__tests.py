@@ -25,6 +25,7 @@ from iommi.member import (
     bind_members,
     collect_members,
 )
+from iommi.refinable import RefinableMembers
 from iommi.traversable import (
     Traversable,
 )
@@ -108,7 +109,7 @@ def test_all_action_shortcuts():
 
     class ThingWithActions(Traversable):
 
-        actions: Dict[str, Action] = Refinable()
+        actions: Dict[str, Action] = RefinableMembers()
 
         def on_refine_done(self):
             collect_members(self, name='actions', items=self.actions, cls=MyFancyAction)
@@ -227,6 +228,6 @@ def test_actions():
 
 def test_check_for_bad_value_usage():
     with pytest.raises(AssertionError) as e:
-        Action(tag='button', attrs__value='foo')
+        Action(tag='button', attrs__value='foo').refine_done()
 
     assert str(e.value) == 'You passed attrs__value, but you should pass display_name'
