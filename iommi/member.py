@@ -111,7 +111,8 @@ def collect_members(
 
     for key, item in items_of(unbound_items):
         if isinstance(item, Traversable):
-            unbound_items[key] = item.apply_styles(container.namespace.get('iommi_style'), is_root=False).refine_done()
+            styled_item = item.apply_styles(container.namespace.get('iommi_style'), is_root=False)
+            unbound_items[key] = styled_item.refine_done()
 
     # for k, v in items_of(unbound_items):
     #     if isinstance(v, RefinableObject):

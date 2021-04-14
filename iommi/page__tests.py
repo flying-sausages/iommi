@@ -21,6 +21,17 @@ from tests.helpers import (
 )
 
 
+def test_simple_page():
+    class MyPage(Page):
+        footer = html.div(
+            html.hr(),
+        )
+
+    my_page = MyPage()
+    my_page.bind(request=req('GET')).render_to_response()
+    my_page.bind(request=req('GET')).render_to_response()
+
+
 def test_page_constructor():
     class MyPage(Page):
         h1 = html.h1()

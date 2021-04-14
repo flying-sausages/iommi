@@ -517,7 +517,6 @@ class Field(Part, Tag):
     empty_label: str = EvaluatedRefinable()
 
     @dispatch(
-        tag=None,
         attr=MISSING,
         display_name=MISSING,
         attrs__class=EMPTY,

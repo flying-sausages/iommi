@@ -1588,8 +1588,6 @@ class Table(Part, Tag):
 
         assert isinstance(self.columns, dict)
 
-        self.columns = None
-
         self.model = model
         self.initial_rows = self.rows
         self.header = HeaderConfig(**self.header)
