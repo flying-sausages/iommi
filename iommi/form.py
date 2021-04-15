@@ -1226,9 +1226,9 @@ class Field(Part, Tag):
     @class_shortcut(
         nested_table__title=None,
     )
-    def formset(cls, call_target=None, **kwargs):
+    def formset(cls, form, *, call_target=None, **kwargs):
         call_target = FormsetField
-        return call_target(**kwargs)
+        return call_target(**kwargs, form=form)
 
     @classmethod
     @class_shortcut(
@@ -1257,7 +1257,7 @@ class FormsetField(Field):
         nested_table__attrs__method=None,
         input__template=Template('{{ field.nested_table }}'),
     )
-    def __init__(self, **kwargs):
+    def __init__(self, *, form, **kwargs):
         from iommi.table import Table, Column
         from iommi.endpoint import path_join
 
